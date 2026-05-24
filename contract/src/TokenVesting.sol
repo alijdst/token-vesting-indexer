@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TokenVesting is Ownable {
-
     IERC20 public immutable token;
     using SafeERC20 for IERC20;
 
@@ -18,45 +17,25 @@ contract TokenVesting is Ownable {
 
     mapping(address => Vesting) public vestings;
 
-    event VestingCreated(
-        address indexed user,
-        uint256 amount,
-        uint256 duration
-    );
+    event VestingCreated(address indexed user, uint256 amount, uint256 duration);
 
-    event TokensClaimed(
-        address indexed user,
-        uint256 amount
-    );
+    event TokensClaimed(address indexed user, uint256 amount);
 
     constructor(address _token) Ownable(msg.sender) {
         token = IERC20(_token);
     }
 
-    function createVesting(
-        address user,
-        uint256 amount,
-        uint256 duration
-    ) external onlyOwner {
-
+    function createVesting(address user, uint256 amount, uint256 duration) external onlyOwner {
         require(user != address(0), "zero address");
         require(amount > 0, "zero amount");
         require(duration > 0, "zero duration");
 
-        vestings[user] = Vesting({
-            total: amount,
-            claimed: 0,
-            start: block.timestamp,
-            duration: duration
-        });
+        vestings[user] = Vesting({total: amount, claimed: 0, start: block.timestamp, duration: duration});
 
         emit VestingCreated(user, amount, duration);
     }
 
-    function releasableAmount(
-        address user
-    ) public view returns (uint256) {
-
+    function releasableAmount(address user) public view returns (uint256) {
         Vesting memory v = vestings[user];
 
         if (v.total == 0) {
@@ -69,16 +48,13 @@ contract TokenVesting is Ownable {
             return v.total - v.claimed;
         }
 
-        uint256 vested =
-            (v.total * elapsed) / v.duration;
+        uint256 vested = (v.total * elapsed) / v.duration;
 
         return vested - v.claimed;
     }
 
     function claim() external {
-
-        uint256 amount =
-            releasableAmount(msg.sender);
+        uint256 amount = releasableAmount(msg.sender);
 
         require(amount > 0, "nothing to claim");
 
